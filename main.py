@@ -70,7 +70,13 @@ async def report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def lesson(update: Update, context: ContextTypes.DEFAULT_TYPE):
     today = datetime.now().strftime("%Y-%m-%d")
     await update.message.reply_text(
-        f"Урок на {today}:
+        f"Урок на {today}:today = datetime.now().strftime("%d.%m.%Y")
+lesson_text = (
+    f"Урок на {today}:\n\n"
+    "- Что такое ликвидность?\n"
+    "Ликвидность — это зона, где накапливаются ордера (чаще всего стопы), и цена туда тянется.\n\n"
+    "Вопрос: Где будет зона ликвидности, если мы видим много экстремумов подряд снизу?"
+)
 
 Тема: Ордер-блоки
 
