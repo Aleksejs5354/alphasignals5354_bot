@@ -1,21 +1,30 @@
-
 import logging
-import datetime
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import (
+    ApplicationBuilder,
+    CommandHandler,
+    MessageHandler,
+    ContextTypes,
+    filters,
+)
+import asyncio
+import datetime
 
 # Логирование
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
-# Состояние пользователя
+# Пользовательские данные
 user_data = {}
 
+# Команда /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет, брат! Я с тобой на связи.")
 
+# Команда /about
 async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Я твой трейдинг-бот. Сигналы, анализ, обучение, сопровождение — всё будет.")
 
+# Команда /setmode
 async def setmode(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         mode = context.args[0]
@@ -32,9 +41,17 @@ async def setmode(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except:
         await update.message.reply_text("Формат команды неверен. Пример: /setmode aggressive 300 10")
 
+# Команда /signal
 async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Введи сигнал в формате: LONG BTC от 65000 до 68000")
+    uid = update.effective_user.id
+    text = " ".join(context.args)
+    if uid in user_data:
+        user_data[uid]["signals"].append(text)
+        await update.message.reply_text("Сигнал записан.")
+    else:
+        await update.message.reply_text("Сначала установи режим через /setmode")
 
+# Команда /entry
 async def entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id
     if uid in user_data:
@@ -43,6 +60,7 @@ async def entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Сначала установи режим через /setmode")
 
+# Команда /exit
 async def exit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id
     if uid in user_data and "entry" in user_data[uid]["current_trade"]:
@@ -51,6 +69,7 @@ async def exit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Сначала зафиксируй вход через /entry")
 
+# Команда /journal
 async def journal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id
     if uid in user_data and user_data[uid]["signals"]:
@@ -59,19 +78,20 @@ async def journal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Журнал пуст, брат.")
 
+# Команда /report
 async def report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Отчёт по сделкам пока готовится. Скоро будет.")
 
-async def lesson(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    today = datetime.datetime.now().strftime("%Y-%m-%d")
-    answer = f"Урок на {today}:\nСегодняшняя тема — определение тренда. Тренд — это направление движения цены. Определи минимум и максимум последних свечей. Если максимумы и минимумы растут — восходящий тренд. Если падают — нисходящий."
-    await update.message.reply_text(answer)
-
-async def autosignal(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Автосигналы активированы. Пока тестовая заглушка. Скоро будут реальные сигналы.")
-
+# Уведомление о неизвестной команде
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Не понял команду, брат. Проверь или используй /about.")
+
+# Автосигналы по расписанию
+async def scheduled_signal(context: ContextTypes.DEFAULT_TYPE):
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    message = f"АВТОСИГНАЛ ({now})\nBTCUSDT зона интереса от 67200 до 67550. Возможен лонг с коротким стопом."
+    for uid in user_data:
+        await context.bot.send_message(chat_id=uid, text=message)
 
 def main():
     app = ApplicationBuilder().token("7764468557:AAEy1S3TybWK_8t0LIRSVM8t78jjqTqtYL8").build()
@@ -84,9 +104,10 @@ def main():
     app.add_handler(CommandHandler("exit", exit))
     app.add_handler(CommandHandler("journal", journal))
     app.add_handler(CommandHandler("report", report))
-    app.add_handler(CommandHandler("lesson", lesson))
-    app.add_handler(CommandHandler("autosignal", autosignal))
     app.add_handler(MessageHandler(filters.COMMAND, unknown))
+
+    # Автосигнал в 8:30 каждый день
+    app.job_queue.run_daily(scheduled_signal, time=datetime.time(hour=8, minute=30))
 
     app.run_polling()
 
