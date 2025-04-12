@@ -48,8 +48,10 @@ async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"Направление: {direction.upper()}
 "
             f"Вход: {entry}
-Stop Loss: {sl}
-Take Profit: {tp}
+"
+            f"Stop Loss: {sl}
+"
+            f"Take Profit: {tp}
 "
             f"Объём: {mode_settings['amount']} USDT, Плечо: x{mode_settings['leverage']}"
         )
