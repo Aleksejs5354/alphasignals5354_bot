@@ -1,28 +1,22 @@
 
 import logging
+import datetime
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
-    MessageHandler,
     ContextTypes,
+    MessageHandler,
     filters,
 )
-import asyncio
-from datetime import datetime, time, timedelta
 
 # Логирование
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-# Состояние пользователя
+# Хранилище данных
 user_data = {}
-analysis_active = True  # Переключатель автoанализа
 
 # Команды
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет, брат! Я с тобой на связи.")
 
@@ -46,7 +40,13 @@ async def setmode(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Формат команды неверен. Пример: /setmode aggressive 300 10")
 
 async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Введи сигнал в формате: LONG BTC от 65000 до 68000")
+    uid = update.effective_user.id
+    signal_text = ' '.join(context.args)
+    if uid in user_data:
+        user_data[uid]["signals"].append(signal_text)
+        await update.message.reply_text("Сигнал принят.")
+    else:
+        await update.message.reply_text("Сначала установи режим через /setmode")
 
 async def entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id
@@ -75,55 +75,22 @@ async def journal(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Отчёт по сделкам пока готовится. Скоро будет.")
 
-# Урок по команде
 async def lesson(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    today = datetime.now().strftime("%Y-%m-%d")
-    lesson_text = (
-        f"Урок на {today}:
-"
-        "- Теория: Сегодня разбираем, что такое ордер-блоки.
-"
-        "- Практика: Посмотри на график BTC и отметь последнюю зону, где цена дала сильный откат.
-"
-        "(В будущем здесь будет скрин и вопрос для ответа.)"
-    )
-    await update.message.reply_text(lesson_text)
+    today = datetime.date.today().isoformat()
+    text = f"""Урок на {today}:
 
-# Анализ рынка
-async def market(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Рынок:
-BTC — нейтрально
-ETH — бычья структура
-Альты — следуем за BTC")
+Сегодня мы рассматриваем основы ордер-блоков.
+1. Найди импульсное движение.
+2. Отметь последнюю свечу перед этим импульсом.
+3. Это и есть ордер-блок.
 
-# Управление автоанализом
-async def stop_analysis(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global analysis_active
-    analysis_active = False
-    await update.message.reply_text("Автоматический анализ остановлен.")
-
-async def resume_analysis(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global analysis_active
-    analysis_active = True
-    await update.message.reply_text("Автоматический анализ возобновлён.")
+Попробуй найти такой на текущем графике BTC. Задача: пришли скрин с отмеченным блоком.""" 
+    await update.message.reply_text(text)
 
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Не понял команду, брат. Проверь или используй /about.")
 
-# Автоматическая отправка урока
-async def scheduled_lesson(app):
-    while True:
-        now = datetime.now()
-        lesson_time = datetime.combine(now.date(), time(hour=8, minute=30))
-        if now >= lesson_time and now <= lesson_time + timedelta(minutes=1):
-            for uid in user_data:
-                try:
-                    await app.bot.send_message(chat_id=uid, text="(Урок) Теория: сегодня смотрим ордер-блоки.")
-                except:
-                    pass
-            await asyncio.sleep(60)
-        await asyncio.sleep(30)
-
+# Основная функция
 def main():
     app = ApplicationBuilder().token("7764468557:AAEy1S3TybWK_8t0LIRSVM8t78jjqTqtYL8").build()
 
@@ -136,15 +103,9 @@ def main():
     app.add_handler(CommandHandler("journal", journal))
     app.add_handler(CommandHandler("report", report))
     app.add_handler(CommandHandler("lesson", lesson))
-    app.add_handler(CommandHandler("market", market))
-    app.add_handler(CommandHandler("stop_analysis", stop_analysis))
-    app.add_handler(CommandHandler("resume_analysis", resume_analysis))
     app.add_handler(MessageHandler(filters.COMMAND, unknown))
-
-    app.job_queue.run_once(lambda *_: asyncio.create_task(scheduled_lesson(app)), 1)
 
     app.run_polling()
 
 if __name__ == "__main__":
     main()
-
