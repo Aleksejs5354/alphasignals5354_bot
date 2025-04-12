@@ -65,7 +65,7 @@ async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Не понял команду, брат. Проверь или используй /about.")
 
 def main():
-    app = ApplicationBuilder().token("ТВОЙ_ТОКЕН_СЮДА").build()
+    app = ApplicationBuilder().token("7764468557:AAEy1S3TybWK_8t0LIRSVM8t78jjqTqtYL8").build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("about", about))
