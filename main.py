@@ -1,19 +1,19 @@
 import logging
-from telegram import Update
-from telegram.ext import (
-    ApplicationBuilder,
-    CommandHandler,
-    MessageHandler,
-    ContextTypes,
-    filters,
-)
 import asyncio
 import datetime
+from telegram import Update
+from telegram.ext import (
+    ApplicationBuilder, CommandHandler,
+    MessageHandler, ContextTypes, filters
+)
 
 # Логирование
-logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 
-# Пользовательские данные
+# Состояние пользователя
 user_data = {}
 
 # Команда /start
@@ -22,7 +22,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Команда /about
 async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Я твой трейдинг-бот. Сигналы, анализ, обучение, сопровождение — всё будет.")
+    await update.message.reply_text(
+        "Я твой трейдинг-бот. Сигналы, анализ, обучение, сопровождение — всё будет."
+    )
 
 # Команда /setmode
 async def setmode(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -37,19 +39,17 @@ async def setmode(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "signals": [],
             "current_trade": {}
         }
-        await update.message.reply_text(f"Режим установлен: {mode.upper()} | Объём: {amount} USDT | Плечо: x{leverage}")
+        await update.message.reply_text(
+            f"Режим установлен: {mode.upper()} | Объём: {amount} USDT | Плечо: x{leverage}"
+        )
     except:
-        await update.message.reply_text("Формат команды неверен. Пример: /setmode aggressive 300 10")
+        await update.message.reply_text(
+            "Формат команды неверен. Пример: /setmode aggressive 300 10"
+        )
 
 # Команда /signal
 async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    uid = update.effective_user.id
-    text = " ".join(context.args)
-    if uid in user_data:
-        user_data[uid]["signals"].append(text)
-        await update.message.reply_text("Сигнал записан.")
-    else:
-        await update.message.reply_text("Сначала установи режим через /setmode")
+    await update.message.reply_text("Введи сигнал в формате: LONG BTC от 65000 до 68000")
 
 # Команда /entry
 async def entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -82,16 +82,20 @@ async def journal(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Отчёт по сделкам пока готовится. Скоро будет.")
 
-# Уведомление о неизвестной команде
+# Команда /chart
+async def chart(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Скоро добавим отправку графиков автоматически и вручную.")
+
+# Обработка неизвестных команд
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Не понял команду, брат. Проверь или используй /about.")
 
-# Автосигналы по расписанию
-async def scheduled_signal(context: ContextTypes.DEFAULT_TYPE):
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-    message = f"АВТОСИГНАЛ ({now})\nBTCUSDT зона интереса от 67200 до 67550. Возможен лонг с коротким стопом."
-    for uid in user_data:
-        await context.bot.send_message(chat_id=uid, text=message)
+# Периодическая задача по расписанию (ежедневно в 8:30)
+async def scheduled_chart(context: ContextTypes.DEFAULT_TYPE):
+    now = datetime.datetime.now()
+    chat_id = context.job.data
+    await context.bot.send_message(chat_id=chat_id,
+                                   text=f"Доброе утро! График BTCUSDT на {now.strftime('%Y-%m-%d')} (будет позже).")
 
 def main():
     app = ApplicationBuilder().token("7764468557:AAEy1S3TybWK_8t0LIRSVM8t78jjqTqtYL8").build()
@@ -104,10 +108,12 @@ def main():
     app.add_handler(CommandHandler("exit", exit))
     app.add_handler(CommandHandler("journal", journal))
     app.add_handler(CommandHandler("report", report))
+    app.add_handler(CommandHandler("chart", chart))
     app.add_handler(MessageHandler(filters.COMMAND, unknown))
 
-    # Автосигнал в 8:30 каждый день
-    app.job_queue.run_daily(scheduled_signal, time=datetime.time(hour=8, minute=30))
+    # Планировщик для автографика в 8:30
+    target_time = datetime.time(hour=8, minute=30)
+    app.job_queue.run_daily(scheduled_chart, time=target_time, data=7764468557)
 
     app.run_polling()
 
