@@ -1,27 +1,19 @@
+
 import logging
 from datetime import datetime
 from telegram import Update
 from telegram.ext import (
-    ApplicationBuilder,
-    CommandHandler,
-    ContextTypes,
-    MessageHandler,
-    filters,
+    ApplicationBuilder, CommandHandler, MessageHandler,
+    ContextTypes, filters
 )
-import pytz
 
-# Токен бота
-BOT_TOKEN = "7764468557:AAEy1S3TybWK_8t0LIRSVM8t78jjqTqtYL8"
-
-# Временная зона
-LATVIA_TZ = pytz.timezone("Europe/Riga")
-
-# Логирование
+# Конфигурация логирования
 logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
 )
 
-# Данные пользователя
+# Хранилище данных пользователя
 user_data = {}
 
 # Команда /start
@@ -30,9 +22,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Команда /about
 async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "Я твой трейдинг-бот. Сигналы, анализ, обучение, сопровождение — всё будет."
-    )
+    await update.message.reply_text("Я твой трейдинг-бот. Сигналы, анализ, обучение, сопровождение — всё будет.")
 
 # Команда /setmode
 async def setmode(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -45,92 +35,71 @@ async def setmode(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "amount": amount,
             "leverage": leverage,
             "signals": [],
-            "current_trade": {},
+            "current_trade": {}
         }
-        await update.message.reply_text(
-            f"Режим установлен: {mode.upper()} | Объём: {amount} USDT | Плечо: x{leverage}"
-        )
+        await update.message.reply_text(f"Режим установлен: {mode.upper()} | Объём: {amount} USDT | Плечо: x{leverage}")
     except:
-        await update.message.reply_text("Формат команды: /setmode aggressive 300 10")
+        await update.message.reply_text("Формат команды неверен. Пример: /setmode aggressive 300 10")
 
 # Команда /signal
 async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    uid = update.effective_user.id
-    signal_text = " ".join(context.args)
-    timestamp = datetime.now(LATVIA_TZ).strftime("%Y-%m-%d %H:%M")
-    user_data.setdefault(uid, {}).setdefault("signals", []).append(f"{timestamp} — {signal_text}")
-    await update.message.reply_text("Сигнал сохранён и готов к сопровождению.")
+    await update.message.reply_text("Введи сигнал в формате: LONG BTC от 65000 до 68000")
 
-# Команды /entry и /exit
+# Команда /entry
 async def entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id
-    user_data.setdefault(uid, {}).setdefault("current_trade", {})["entry"] = update.message.date
-    await update.message.reply_text("Вход в сделку зафиксирован.")
+    if uid in user_data:
+        user_data[uid]["current_trade"]["entry"] = update.message.date
+        await update.message.reply_text("Вход зафиксирован.")
+    else:
+        await update.message.reply_text("Сначала установи режим через /setmode")
 
+# Команда /exit
 async def exit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id
-    trade = user_data.get(uid, {}).get("current_trade", {})
-    if "entry" in trade:
-        trade["exit"] = update.message.date
-        await update.message.reply_text("Выход из сделки зафиксирован.")
+    if uid in user_data and "entry" in user_data[uid]["current_trade"]:
+        user_data[uid]["current_trade"]["exit"] = update.message.date
+        await update.message.reply_text("Выход зафиксирован. Пока расчёт прибыли заглушен.")
     else:
         await update.message.reply_text("Сначала зафиксируй вход через /entry")
 
 # Команда /journal
 async def journal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id
-    signals = user_data.get(uid, {}).get("signals", [])
-    if signals:
-        await update.message.reply_text("Сигналы:
-" + "
-".join(signals))
+    if uid in user_data and user_data[uid]["signals"]:
+        reply = "
+".join(user_data[uid]["signals"])
+        await update.message.reply_text(f"Сигналы:
+{reply}")
     else:
         await update.message.reply_text("Журнал пуст, брат.")
 
 # Команда /report
 async def report(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Отчёт по сделкам скоро будет доступен.")
+    await update.message.reply_text("Отчёт по сделкам пока готовится. Скоро будет.")
 
-# Команда /lesson (фаза 2)
+# Команда /lesson
 async def lesson(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    today = datetime.now(LATVIA_TZ).strftime("%Y-%m-%d")
+    today = datetime.now().strftime("%Y-%m-%d")
     await update.message.reply_text(
         f"Урок на {today}:
-
 "
-        "- Что такое ордер-блок?
+        "Сегодня мы изучаем зоны интереса (POI) и как находить ордер-блоки.
 "
-        "- Как определить зону ликвидности?
-
-"
-        "Вопрос: где на графике сейчас потенциальная зона возврата?"
+        "Задание: открой график BTC и найди последнюю бычью свечу перед падением. Это и есть ордер-блок."
     )
 
-# Команда /autosignal (фаза 3)
+# Команда /autosignal (заглушка фазы 3)
 async def autosignal(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "Анализируем рынок...
+    await update.message.reply_text("Автосигналы активированы. Анализирую рынок и скоро выдам первую цель.")
 
-"
-        "🔍 Обнаружено:
-"
-        "- Имбаланс на BTC 1H
-"
-        "- Раскорреляция с ETH
-"
-        "- Потенциальная зона входа: LONG BTC от 66500
-
-"
-        "Подтверждаешь? Жду команду /entry если входишь."
-    )
-
-# Обработка неизвестных команд
+# Команда для неизвестных
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Не понял команду, брат. Используй /about.")
+    await update.message.reply_text("Не понял команду, брат. Проверь или используй /about.")
 
-# Главная функция
+# Запуск приложения
 def main():
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app = ApplicationBuilder().token("7764468557:AAEy1S3TybWK_8t0LIRSVM8t78jjqTqtYL8").build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("about", about))
