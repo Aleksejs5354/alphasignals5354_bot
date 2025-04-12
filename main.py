@@ -59,9 +59,9 @@ async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"Вход: {entry}\n"
             f"Stop Loss: {sl}\n"
             f"Take Profit: {tp}\n"
-            f"Объём: {mode_settings['amount']} USDT, Плечо: x{mode_settings['leverage']}")
+            f"Объём: {mode_settings['amount']} USDT, Плечо: x{mode_settings['leverage']}")"
 "
-            f"Take Profit: {tp}
+            f"Take Profit: {tp}"
 "
             f"Объём: {mode_settings['amount']} USDT, Плечо: x{mode_settings['leverage']}"
         )
@@ -102,7 +102,7 @@ async def journal(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     response = ""
     for entry in trade_journal[-10:]:
-        response += f"{entry['тип'].upper()} | {entry.get('время')} | {entry.get('текст', '')}
+        response += f"{entry['тип'].upper()} | {entry.get('время')} | {entry.get('текст', '')}"
 "
     await update.message.reply_text(response)
 
@@ -110,11 +110,11 @@ async def report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     trades = len(trade_journal)
     entries = len([t for t in trade_journal if t['тип'] == 'вход'])
     exits = len([t for t in trade_journal if t['тип'] == 'выход'])
-    await update.message.reply_text(f"Сделок: {trades}, Входов: {entries}, Выходов: {exits}")
+    await update.message.reply_text(f"Сделок: {trades}, Входов: {entries}, Выходов: {exits}")"
 
 async def lesson(update: Update, context: ContextTypes.DEFAULT_TYPE):
     today = datetime.date.today().strftime("%d.%m.%Y")
-    text = f"Урок на {today}:
+    text = f"Урок на {today}:"
 
 Сегодняшняя тема: Имбаланс и зоны возврата цены.
 Отметь на графике BTCUSDT последнюю зону неэффективности."
@@ -122,7 +122,7 @@ async def lesson(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def scheduled_chart(context: CallbackContext):
     today = datetime.date.today().strftime("%d.%m.%Y")
-    text = f"Урок на {today}:
+    text = f"Урок на {today}:"
 
 Сегодняшняя тема: Имбаланс и зоны возврата цены.
 Отметь на графике BTCUSDT последнюю зону неэффективности."
@@ -145,7 +145,7 @@ async def analyze(update: Update, context: ContextTypes.DEFAULT_TYPE):
 "
         response += "- Был ли тренд против входа?"
     elif last["тип"] == "сигнал":
-        response = f"Сигнал {last['пара'].upper()} {last['направление'].upper()} анализируется.
+        response = f"Сигнал {last['пара'].upper()} {last['направление'].upper()} анализируется."
 "
         response += "Проверь:
 "
