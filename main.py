@@ -1,3 +1,4 @@
+
 import logging
 import datetime
 from telegram import Update
@@ -8,7 +9,7 @@ from telegram.ext import (
 
 # === НАСТРОЙКИ ===
 TOKEN = "7764468557:AAEy1S3TybWK_8t0LIRSVM8t78jjqTqtYL8"
-OWNER_ID = 7764468557
+OWNER_ID = 7764468557  # Telegram ID владельца
 
 # === ЛОГИРОВАНИЕ ===
 logging.basicConfig(
@@ -24,7 +25,8 @@ mode_settings = {
 
 trade_journal = []
 
-# === ФАЗА 1 ===
+# === ОБРАБОТЧИКИ КОМАНД ===
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет, брат")
 
@@ -35,11 +37,13 @@ async def setmode(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if 1 <= leverage <= 125 and 1 <= amount <= 5000:
             mode_settings["amount"] = amount
             mode_settings["leverage"] = leverage
-            await update.message.reply_text(f"Установлен режим: {amount} USDT, x{leverage}")
+            await update.message.reply_text(
+                f"Установлен режим: сумма {amount} USDT, плечо x{leverage}"
+            )
         else:
             await update.message.reply_text("Некорректные значения.")
-    except:
-        await update.message.reply_text("Формат: /setmode 300 10")
+    except (IndexError, ValueError):
+        await update.message.reply_text("Использование: /setmode сумма плечо")
 
 async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -61,8 +65,17 @@ async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE):
 "
             f"Объём: {mode_settings['amount']} USDT, Плечо: x{mode_settings['leverage']}"
         )
+        trade_journal.append({
+            "тип": "сигнал",
+            "пара": pair,
+            "направление": direction,
+            "вход": entry,
+            "sl": sl,
+            "tp": tp,
+            "время": str(datetime.datetime.now())
+        })
         await update.message.reply_text(response)
-    except:
+    except (IndexError, ValueError):
         await update.message.reply_text("Формат: /signal BTCUSDT LONG 66000 65200 67500")
 
 async def entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -89,7 +102,7 @@ async def journal(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     response = ""
     for entry in trade_journal[-10:]:
-        response += f"{entry['тип'].upper()} | {entry['время']} | {entry['текст']}
+        response += f"{entry['тип'].upper()} | {entry.get('время')} | {entry.get('текст', '')}
 "
     await update.message.reply_text(response)
 
@@ -99,34 +112,54 @@ async def report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     exits = len([t for t in trade_journal if t['тип'] == 'выход'])
     await update.message.reply_text(f"Сделок: {trades}, Входов: {entries}, Выходов: {exits}")
 
-# === ФАЗА 2 ===
 async def lesson(update: Update, context: ContextTypes.DEFAULT_TYPE):
     today = datetime.date.today().strftime("%d.%m.%Y")
-    text = (
-        f"Урок на {today}:
+    text = f"Урок на {today}:
 
-"
-        "Сегодняшняя тема: Имбаланс и зоны возврата цены.
-"
-        "Отметь на графике BTCUSDT последнюю зону неэффективности."
-    )
+Сегодняшняя тема: Имбаланс и зоны возврата цены.
+Отметь на графике BTCUSDT последнюю зону неэффективности."
     await update.message.reply_text(text)
 
 async def scheduled_chart(context: CallbackContext):
     today = datetime.date.today().strftime("%d.%m.%Y")
-    text = (
-        f"Урок на {today}:
+    text = f"Урок на {today}:
 
-"
-        "Сегодняшняя тема: Имбаланс и зоны возврата цены.
-"
-        "Отметь на графике BTCUSDT последнюю зону неэффективности."
-    )
+Сегодняшняя тема: Имбаланс и зоны возврата цены.
+Отметь на графике BTCUSDT последнюю зону неэффективности."
     await context.bot.send_message(chat_id=OWNER_ID, text=text)
+
+# === ФАЗА 5: Анализ ошибок и обратная связь ===
+async def analyze(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not trade_journal:
+        await update.message.reply_text("Нет данных для анализа.")
+        return
+    last = trade_journal[-1]
+    if last["тип"] == "вход":
+        response = "Последняя сделка: вход.
+"
+        response += "Если сделка убыточна, проверь:
+"
+        response += "- Была ли подтверждена зона входа?
+"
+        response += "- Учитывалась ли ликвидность и имбаланс?
+"
+        response += "- Был ли тренд против входа?"
+    elif last["тип"] == "сигнал":
+        response = f"Сигнал {last['пара'].upper()} {last['направление'].upper()} анализируется.
+"
+        response += "Проверь:
+"
+        response += "- Корректность уровня входа.
+"
+        response += "- Близость SL к зоне ликвидности.
+"
+        response += "- Текущий тренд и структуру."
+    else:
+        response = "Последняя запись не требует анализа."
+    await update.message.reply_text(response)
 
 # === ГЛАВНАЯ ФУНКЦИЯ ===
 def main():
-    from datetime import time
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
@@ -137,8 +170,11 @@ def main():
     app.add_handler(CommandHandler("journal", journal))
     app.add_handler(CommandHandler("report", report))
     app.add_handler(CommandHandler("lesson", lesson))
+    app.add_handler(CommandHandler("analyze", analyze))
 
+    from datetime import time
     app.job_queue.run_daily(scheduled_chart, time=time(8, 30))
+
     print("AlphaSignals запущен.")
     app.run_polling()
 
