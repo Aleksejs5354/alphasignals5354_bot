@@ -53,13 +53,13 @@ async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE):
         sl = float(context.args[3])
         tp = float(context.args[4])
         response = (
-            f"Сигнал по {pair.upper()}:
-"
-            f"Направление: {direction.upper()}
-"
-            f"Вход: {entry}
-"
-            f"Stop Loss: {sl}
+        response = (
+            f"Сигнал по {pair.upper()}:\n"
+            f"Направление: {direction.upper()}\n"
+            f"Вход: {entry}\n"
+            f"Stop Loss: {sl}\n"
+            f"Take Profit: {tp}\n"
+            f"Объём: {mode_settings['amount']} USDT, Плечо: x{mode_settings['leverage']}")
 "
             f"Take Profit: {tp}
 "
