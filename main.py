@@ -1,24 +1,31 @@
-
 import logging
-from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import (
-    ApplicationBuilder, CommandHandler, MessageHandler,
-    ContextTypes, filters, ConversationHandler
-)
 from datetime import datetime
+from telegram import Update
+from telegram.ext import (
+    ApplicationBuilder,
+    CommandHandler,
+    MessageHandler,
+    ContextTypes,
+    filters,
+)
+import asyncio
 
+# Логирование
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 
+# Состояние пользователя
 user_data = {}
 
+# Команды
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет, брат! Я с тобой на связи.")
 
 async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Я твой трейдинг-бот. Сигналы, анализ, обучение, сопровождение — всё будет.")
+    await update.message.reply_text(
+        "Я твой трейдинг-бот. Сигналы, анализ, обучение, сопровождение — всё будет."
+    )
 
 async def setmode(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -32,13 +39,14 @@ async def setmode(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "signals": [],
             "current_trade": {}
         }
-        await update.message.reply_text(f"Режим установлен: {mode.upper()} | Объём: {amount} USDT | Плечо: x{leverage}")
+        await update.message.reply_text(
+            f"Режим установлен: {mode.upper()} | Объём: {amount} USDT | Плечо: x{leverage}"
+        )
     except:
         await update.message.reply_text("Формат команды неверен. Пример: /setmode aggressive 300 10")
 
 async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Введи сигнал в формате: LONG BTC от 65000 до 68000")
-    return
 
 async def entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id
@@ -67,28 +75,21 @@ async def journal(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Отчёт по сделкам пока готовится. Скоро будет.")
 
+# Ежедневный урок (фаза 2)
 async def lesson(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    today = datetime.now().strftime("%Y-%m-%d")
-    await update.message.reply_text(
-        f"Урок на {today}:today = datetime.now().strftime("%d.%m.%Y")
-lesson_text = (
-    f"Урок на {today}:\n\n"
-    "- Что такое ликвидность?\n"
-    "Ликвидность — это зона, где накапливаются ордера (чаще всего стопы), и цена туда тянется.\n\n"
-    "Вопрос: Где будет зона ликвидности, если мы видим много экстремумов подряд снизу?"
-)
-
-Тема: Ордер-блоки
-
-Скрин графика: [ссылка будет позже]
-
-Вопрос: Где здесь зона входа?
-(пока отвечать не надо — скоро добавим проверку)"
+    today = datetime.now().strftime("%d.%m.%Y")
+    lesson_text = (
+        f"Урок на {today}:\n\n"
+        "- Что такое ликвидность?\n"
+        "Ликвидность — это зона, где накапливаются ордера (чаще всего стопы), и цена туда тянется.\n\n"
+        "Вопрос: Где будет зона ликвидности, если мы видим много экстремумов подряд снизу?"
     )
+    await update.message.reply_text(lesson_text)
 
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Не понял команду, брат. Проверь или используй /about.")
 
+# Основной запуск
 def main():
     app = ApplicationBuilder().token("7764468557:AAEy1S3TybWK_8t0LIRSVM8t78jjqTqtYL8").build()
 
@@ -107,4 +108,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
