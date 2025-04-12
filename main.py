@@ -94,30 +94,41 @@ async def journal(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     response = ""
     for entry in trade_journal[-10:]:
-        response += f"{entry['тип'].upper()} | {entry['время']} | {entry['текст']}\n"
+        response += f"{entry['тип'].upper()} | {entry['время']} | {entry['текст']}
+"
     await update.message.reply_text(response)
 
 async def report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     trades = len(trade_journal)
     entries = len([t for t in trade_journal if t['тип'] == 'вход'])
     exits = len([t for t in trade_journal if t['тип'] == 'выход'])
-    await update.message.reply_text(f"Сделок: {trades}\nВходов: {entries}\nВыходов: {exits}")
+    await update.message.reply_text(f"Сделок: {trades}
+Входов: {entries}
+Выходов: {exits}")
 
 async def lesson(update: Update, context: ContextTypes.DEFAULT_TYPE):
     today = datetime.date.today().strftime("%d.%m.%Y")
-    text = f"Урок на {today}:
+    text = (
+        f"Урок на {today}:
 
-Сегодняшняя тема: Имбаланс и зоны возврата цены.
-Отметь на графике BTCUSDT последнюю зону неэффективности."
+"
+        f"Сегодняшняя тема: Имбаланс и зоны возврата цены.
+"
+        f"Отметь на графике BTCUSDT последнюю зону неэффективности."
+    )
     await update.message.reply_text(text)
 
 # === РАСПИСАНИЕ УРОКОВ ===
 async def scheduled_chart(context: CallbackContext):
     today = datetime.date.today().strftime("%d.%m.%Y")
-    text = f"Урок на {today}:
+    text = (
+        f"Урок на {today}:
 
-Сегодняшняя тема: Имбаланс и зоны возврата цены.
-Отметь на графике BTCUSDT последнюю зону неэффективности."
+"
+        f"Сегодняшняя тема: Имбаланс и зоны возврата цены.
+"
+        f"Отметь на графике BTCUSDT последнюю зону неэффективности."
+    )
     await context.bot.send_message(chat_id=OWNER_ID, text=text)
 
 # === ГЛАВНАЯ ФУНКЦИЯ ===
