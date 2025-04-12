@@ -1,11 +1,17 @@
+
 import logging
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
+from telegram import Update, ReplyKeyboardMarkup
+from telegram.ext import (
+    ApplicationBuilder, CommandHandler, MessageHandler,
+    ContextTypes, filters, ConversationHandler
+)
+from datetime import datetime
 
-# Логирование
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 
-# Состояние пользователя
 user_data = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -61,6 +67,19 @@ async def journal(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Отчёт по сделкам пока готовится. Скоро будет.")
 
+async def lesson(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    today = datetime.now().strftime("%Y-%m-%d")
+    await update.message.reply_text(
+        f"Урок на {today}:
+
+Тема: Ордер-блоки
+
+Скрин графика: [ссылка будет позже]
+
+Вопрос: Где здесь зона входа?
+(пока отвечать не надо — скоро добавим проверку)"
+    )
+
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Не понял команду, брат. Проверь или используй /about.")
 
@@ -75,9 +94,11 @@ def main():
     app.add_handler(CommandHandler("exit", exit))
     app.add_handler(CommandHandler("journal", journal))
     app.add_handler(CommandHandler("report", report))
+    app.add_handler(CommandHandler("lesson", lesson))
     app.add_handler(MessageHandler(filters.COMMAND, unknown))
 
     app.run_polling()
 
 if __name__ == "__main__":
     main()
+
