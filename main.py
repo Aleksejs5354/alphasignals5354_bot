@@ -6,6 +6,7 @@ from telegram.ext import (
     ApplicationBuilder, CommandHandler, ContextTypes,
     CallbackContext
 )
+from datetime import time
 
 # === НАСТРОЙКИ ===
 TOKEN = "7764468557:AAEy1S3TybWK_8t0LIRSVM8t78jjqTqtYL8"
@@ -121,8 +122,8 @@ def main():
     app.add_handler(CommandHandler("report", report))
     app.add_handler(CommandHandler("lesson", lesson))
 
-    from datetime import time
-    app.job_queue.run_daily(scheduled_chart, time=time(8, 30))
+    job_queue = app.job_queue
+    job_queue.run_daily(scheduled_chart, time=time(8, 30))
 
     print("AlphaSignals запущен.")
     app.run_polling()
