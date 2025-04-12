@@ -1,29 +1,27 @@
 
 import logging
 from telegram import Update
-from telegram.ext import (
-    ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes,
-    filters, CallbackContext
-)
-from telegram.ext import JobQueue
-from datetime import time as dt_time, datetime
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters, JobQueue
+from datetime import datetime, time
+import asyncio
 
-# Включаем логирование
+# Инициализация логгера
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 
-# Хранилище данных пользователей
+TOKEN = "7764468557:AAEy1S3TybWK_8t0LIRSVM8t78jjqTqtYL8"
+
 user_data = {}
 
-# === ФАЗА 1 ===
+# === Команды фазы 1 ===
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет, брат! Я с тобой на связи.")
 
 async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "Я твой трейдинг-бот. Сигналы, анализ, обучение, сопровождение — всё будет.")
+    await update.message.reply_text("Я твой трейдинг-бот. Сигналы, анализ, обучение, сопровождение — всё будет.")
 
 async def setmode(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -37,12 +35,10 @@ async def setmode(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "signals": [],
             "current_trade": {}
         }
-        await update.message.reply_text(
-            f"Режим установлен: {mode.upper()} | Объём: {amount} USDT | Плечо: x{leverage}")
+        await update.message.reply_text(f"Режим установлен: {mode.upper()} | Объём: {amount} USDT | Плечо: x{leverage}")
     except:
         await update.message.reply_text("Формат команды неверен. Пример: /setmode aggressive 300 10")
 
-# === ФАЗА 2 ===
 async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Введи сигнал в формате: LONG BTC от 65000 до 68000")
 
@@ -65,35 +61,59 @@ async def exit(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def journal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id
     if uid in user_data and user_data[uid]["signals"]:
-        reply = "\n".join(user_data[uid]["signals"])
-        await update.message.reply_text("Сигналы:\n" + reply)
+        reply = "
+".join(user_data[uid]["signals"])
+        await update.message.reply_text("Сигналы:
+" + reply)
     else:
         await update.message.reply_text("Журнал пуст, брат.")
 
 async def report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Отчёт по сделкам пока готовится. Скоро будет.")
 
-# === ФАЗА 4 — Автографик по расписанию ===
-async def scheduled_chart(context: CallbackContext):
-    chat_id = context.job.data
-    today = datetime.now().strftime("%Y-%m-%d")
-    text = f"Урок на {today}:
-
-1. Ордер-блоки
-2. Ликвидность
-3. Зона интереса
-4. Сценарий дня (в разработке)"
-    await context.bot.send_message(chat_id=chat_id, text=text)
-
-# Команда-заглушка
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Не понял команду, брат. Проверь или используй /about.")
 
-# === MAIN ===
-def main():
-    app = ApplicationBuilder().token("7764468557:AAEy1S3TybWK_8t0LIRSVM8t78jjqTqtYL8").build()
+# === Фаза 2: Учебный модуль ===
 
-    # Регистрация хендлеров
+async def lesson(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    today = datetime.now().strftime("%d.%m.%Y")
+    text = (
+        f"Урок на {today}:
+"
+        "- Найди зону ликвидности.
+"
+        "- Отметь ордер-блок.
+"
+        "- Определи направление тренда.
+"
+        "Ответ пришли вручную или используй команду /entry для фиксации точки входа."
+    )
+    await update.message.reply_text(text)
+
+# === Фаза 4: Автографик и автоурок по расписанию ===
+
+async def scheduled_chart(context: ContextTypes.DEFAULT_TYPE):
+    user_id = context.job.data
+    today = datetime.now().strftime("%d.%m.%Y")
+    await context.bot.send_message(
+        chat_id=user_id,
+        text=(
+            f"Урок на {today}:
+"
+            "- Посмотри на текущую цену BTC и ETH.
+"
+            "- Найди зоны интереса и неэффективности.
+"
+            "- Отметь, где возможен возврат цены.
+"
+            "Ответ зафиксируй через /entry."
+        )
+    )
+
+def main():
+    app = ApplicationBuilder().token(TOKEN).build()
+
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("about", about))
     app.add_handler(CommandHandler("setmode", setmode))
@@ -102,12 +122,12 @@ def main():
     app.add_handler(CommandHandler("exit", exit))
     app.add_handler(CommandHandler("journal", journal))
     app.add_handler(CommandHandler("report", report))
+    app.add_handler(CommandHandler("lesson", lesson))
     app.add_handler(MessageHandler(filters.COMMAND, unknown))
 
-    # === JobQueue для фазы 4 ===
-    job_queue = app.job_queue
-    target_time = dt_time(hour=8, minute=30)
-    job_queue.run_daily(scheduled_chart, time=target_time, data=7764468557)
+    # Расписание автоурока (фаза 4) в 8:30
+    target_time = time(hour=8, minute=30)
+    app.job_queue.run_daily(scheduled_chart, time=target_time, data=7764468557)
 
     app.run_polling()
 
