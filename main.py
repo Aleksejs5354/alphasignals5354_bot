@@ -94,17 +94,14 @@ async def journal(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     response = ""
     for entry in trade_journal[-10:]:
-        response += f"{entry['тип'].upper()} | {entry['время']} | {entry['текст']}
-"
+        response += f"{entry['тип'].upper()} | {entry['время']} | {entry['текст']}\n"
     await update.message.reply_text(response)
 
 async def report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     trades = len(trade_journal)
     entries = len([t for t in trade_journal if t['тип'] == 'вход'])
     exits = len([t for t in trade_journal if t['тип'] == 'выход'])
-    await update.message.reply_text(f"Сделок: {trades}
-Входов: {entries}
-Выходов: {exits}")
+    await update.message.reply_text(f"Сделок: {trades}\nВходов: {entries}\nВыходов: {exits}")
 
 async def lesson(update: Update, context: ContextTypes.DEFAULT_TYPE):
     today = datetime.date.today().strftime("%d.%m.%Y")
